@@ -4663,7 +4663,7 @@
                 "https://github.com/AI2lab/comfyUI-siliconflow-api-2lab"
             ],
             "install_type": "git-clone",
-            "description": "Unofficial implementation of siliconflow API for ComfyUI\nHow to use:apply api key in ：https://cloud.siliconflow.cn/\nadd api key in config.json"
+            "description": "Unofficial implementation of siliconflow API for ComfyUI"
         },
         {
             "author": "SpaceKendo",
