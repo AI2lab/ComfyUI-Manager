@@ -1,25 +1,42 @@
+import { api } from "../../scripts/api.js";
 import { app } from "../../scripts/app.js";
-import { api } from "../../scripts/api.js"
-import { ComfyDialog, $el } from "../../scripts/ui.js";
+import { $el, ComfyDialog } from "../../scripts/ui.js";
 import {
-	ShareDialog,
 	SUPPORTED_OUTPUT_NODE_TYPES,
-	getPotentialOutputsAndOutputNodes,
+	ShareDialog,
 	ShareDialogChooser,
+	getPotentialOutputsAndOutputNodes,
 	showOpenArtShareDialog,
 	showShareDialog,
 	showYouMLShareDialog
 } from "./comfyui-share-common.js";
 import { OpenArtShareDialog } from "./comfyui-share-openart.js";
+import { free_models, install_pip, install_via_git_url, manager_instance, rebootAPI, setManagerInstance, show_message } from "./common.js";
+import { ComponentBuilderDialog, getPureName, load_components, set_component_policy } from "./components-manager.js";
 import { CustomNodesManager } from "./custom-nodes-manager.js";
 import { ModelManager } from "./model-manager.js";
-import { SnapshotManager } from "./snapshot.js";
-import { manager_instance, setManagerInstance, install_via_git_url, install_pip, rebootAPI, free_models, show_message } from "./common.js";
-import { ComponentBuilderDialog, load_components, set_component_policy, getPureName } from "./components-manager.js";
 import { set_double_click_policy } from "./node_fixer.js";
+import { SnapshotManager } from "./snapshot.js";
 
 var docStyle = document.createElement('style');
 docStyle.innerHTML = `
+.comfy-toast {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: rgba(0, 0, 0, 0.7);
+	color: white;
+	padding: 10px 20px;
+	border-radius: 5px;
+	z-index: 1000;
+	transition: opacity 0.5s;
+}
+
+.comfy-toast-fadeout {
+	opacity: 0;
+}
+
 #cm-manager-dialog {
 	width: 1000px;
 	height: 520px;
@@ -897,6 +914,7 @@ class ManagerMenuDialog extends ComfyDialog {
 			['youml', 'YouML'],
 			['matrix', 'Matrix Server'],
 			['comfyworkflows', 'ComfyWorkflows'],
+			['copus', 'Copus'],
 			['all', 'All'],
 		];
 		for (const option of share_options) {
@@ -1235,6 +1253,15 @@ class ManagerMenuDialog extends ComfyDialog {
 					},
 				},
 				{
+					title: "Open 'Copus.io'",
+					callback: () => {
+						const url = "https://www.copus.io";
+						localStorage.setItem("wg_last_visited", url);
+						window.open(url, url);
+						modifyButtonStyle(url);
+					},
+				},
+				{
 					title: "Close",
 					callback: () => {
 						LiteGraph.closeAllContextMenus();
@@ -1278,6 +1305,66 @@ app.registerExtension({
 		separator.style.width = "100%";
 		menu.append(separator);
 
+		try {
+			// new style Manager buttons
+
+			// unload models button into new style Manager button
+			let cmGroup = new (await import("../../scripts/ui/components/buttonGroup.js")).ComfyButtonGroup(
+				new(await import("../../scripts/ui/components/button.js")).ComfyButton({
+					icon: "puzzle",
+					action: () => {
+						if(!manager_instance)
+							setManagerInstance(new ManagerMenuDialog());
+						manager_instance.show();
+					},
+					tooltip: "ComfyUI Manager",
+					content: "Manager",
+					classList: "comfyui-button comfyui-menu-mobile-collapse primary"
+				}).element,
+				new(await import("../../scripts/ui/components/button.js")).ComfyButton({
+					icon: "vacuum-outline",
+					action: () => {
+						free_models();
+					},
+					tooltip: "Unload Models"
+				}).element,
+				new(await import("../../scripts/ui/components/button.js")).ComfyButton({
+					icon: "vacuum",
+					action: () => {
+						free_models(true);
+					},
+					tooltip: "Free model and node cache"
+				}).element,
+				new(await import("../../scripts/ui/components/button.js")).ComfyButton({
+					icon: "share",
+					action: () => {
+						if (share_option === 'openart') {
+							showOpenArtShareDialog();
+							return;
+						} else if (share_option === 'matrix' || share_option === 'comfyworkflows') {
+							showShareDialog(share_option);
+							return;
+						} else if (share_option === 'youml') {
+							showYouMLShareDialog();
+							return;
+						}
+
+						if(!ShareDialogChooser.instance) {
+							ShareDialogChooser.instance = new ShareDialogChooser();
+						}
+						ShareDialogChooser.instance.show();
+					},
+					tooltip: "Share"
+				}).element
+			);
+
+			app.menu?.settingsGroup.element.before(cmGroup.element);
+		}
+		catch(exception) {
+			console.log('ComfyUI is outdated. New style menu based features are disabled.');
+		}
+
+		// old style Manager button
 		const managerButton = document.createElement("button");
 		managerButton.textContent = "Manager";
 		managerButton.onclick = () => {
@@ -1286,7 +1373,6 @@ app.registerExtension({
 				manager_instance.show();
 			}
 		menu.append(managerButton);
-
 
 		const shareButton = document.createElement("button");
 		shareButton.id = "shareButton";

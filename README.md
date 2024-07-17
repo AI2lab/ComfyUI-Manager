@@ -384,6 +384,9 @@ When you run the `scan.sh` script:
 * https://github.com/icefairy64/comfyui-model-tilt
 * https://github.com/andrewharp/ComfyUI-EasyNodes
 * https://github.com/SimithWang/comfyui-renameImages
+* https://github.com/Tcheko243/ComfyUI-Photographer-Alpha7-Nodes
+* https://github.com/Limbicnation/ComfyUINodeToolbox
+* https://github.com/chenpipi0807/pip_longsize
 
 ## Roadmap
 
